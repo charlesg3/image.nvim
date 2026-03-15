@@ -13,7 +13,8 @@ return document.create_document_integration({
   },
   query_buffer_images = function(buffer)
     local buf = buffer or vim.api.nvim_get_current_buf()
-    local parser = vim.treesitter.get_parser(buf, "markdown")
+    local ok, parser = pcall(vim.treesitter.get_parser, buf, "markdown")
+    if not ok or not parser then return {} end
     parser:parse(true)
     local inline_lang = "markdown_inline"
     local inlines = parser:children()[inline_lang]
