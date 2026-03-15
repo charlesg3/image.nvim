@@ -317,6 +317,22 @@ local render = function(image)
       absolute_x = screen_pos.col - 1
       absolute_y = screen_pos.row
     end
+    -- account for inline virtual text (e.g. render-markdown indent) at the image row
+    -- only when x=0, since treesitter node:range() already includes virtual text offsets
+    if original_x == 0 and image.buffer then
+      local extmarks = vim.api.nvim_buf_get_extmarks(
+        image.buffer, -1, { original_y, 0 }, { original_y, 0 }, { details = true }
+      )
+      for _, mark in ipairs(extmarks) do
+        local details = mark[4]
+        if details.virt_text and details.virt_text_pos == "inline" then
+          for _, chunk in ipairs(details.virt_text) do
+            absolute_x = absolute_x + vim.fn.strdisplaywidth(chunk[1])
+          end
+        end
+      end
+    end
+
     -- apply render_offset_top offset if set (but not for floating windows and not during partial scroll)
     local is_floating = window and window.is_floating or false
     if image.render_offset_top and image.render_offset_top > 0 and not is_floating and not is_partial_scroll then
